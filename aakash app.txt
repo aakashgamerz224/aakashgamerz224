@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit With Aakash</title>
+<style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #toolbar { background: #333; color: white; padding: 10px; display: flex; gap: 10px; }
+    #toolbar button, #toolbar input { padding: 5px; }
+    canvas { border: 1px solid black; display: block; margin: auto; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+    <input type="color" id="colorPicker" title="Color Picker">
+    <input type="range" id="brushSize" min="1" max="50" value="5" title="Brush Size">
+    <button onclick="setTool('brush')">Brush</button>
+    <button onclick="setTool('eraser')">Eraser</button>
+    <button onclick="setTool('text')">Text</button>
+    <button onclick="setTool('shape')">Shape</button>
+    <button onclick="setTool('crop')">Crop</button>
+    <button onclick="applyFilter()">Filter</button>
+    <button onclick="downloadImage()">Save</button>
+    <input type="file" id="uploadImage" accept="image/*">
+</div>
+
+<canvas id="canvas" width="800" height="500"></canvas>
+
+<script>
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let tool = 'brush';
+let drawing = false;
+let color = '#000000';
+let size = 5;
+
+document.getElementById('colorPicker').addEventListener('input', e => color = e.target.value);
+document.getElementById('brushSize').addEventListener('input', e => size = e.target.value);
+
+canvas.addEventListener('mousedown', e => { drawing = true; draw(e); });
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mousemove', draw);
+
+function setTool(t) { tool = t; }
+
+function draw(e) {
+    if (!drawing) return;
+    ctx.lineWidth = size;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    if (tool === 'brush') {
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+    } else if (tool === 'eraser') {
+        ctx.clearRect(e.offsetX, e.offsetY, size, size);
+    }
+}
+
+document.getElementById('uploadImage').addEventListener('change', e => {
+    let file = e.target.files[0];
+    let reader = new FileReader();
+    reader.onload = function(evt) {
+        let img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+function applyFilter() {
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = data[i] + 50;     // Red
+        data[i+1] = data[i+1] + 20; // Green
+        data[i+2] = data[i+2] + 20; // Blue
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function downloadImage() {
+    let link = document.createElement('a');
+    link.download = 'edit_with_aakash.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+</script>
+
+</body>
+</html>
